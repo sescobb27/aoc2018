@@ -6,7 +6,8 @@ defmodule Day2 do
       |> Enum.reduce({0, 0}, fn line, {appears_two_times, appears_three_times} ->
         {two_times, three_times, _} =
           line
-          |> count_chars()
+          |> String.graphemes()
+          |> Enum.group_by(& &1)
           |> get_checksum_values()
 
         {appears_two_times + two_times, appears_three_times + three_times}
@@ -21,23 +22,11 @@ defmodule Day2 do
     |> String.split("\n", trim: true)
   end
 
-  defp count_chars(line) do
-    line
-    |> String.graphemes()
-    |> Enum.reduce(%{}, fn char, acc ->
-      case acc do
-        %{^char => value} ->
-          Map.put(acc, char, value + 1)
+  defp get_checksum_values(groups) do
+    Enum.reduce(groups, {0, 0, MapSet.new()}, fn {_key, chars},
+                                                 {two_times, three_times, seen} = acc ->
+      value = length(chars)
 
-        _ ->
-          Map.put(acc, char, 1)
-      end
-    end)
-  end
-
-  defp get_checksum_values(chars) do
-    Enum.reduce(chars, {0, 0, MapSet.new()}, fn {_key, value},
-                                                {two_times, three_times, seen} = acc ->
       if MapSet.member?(seen, value) do
         acc
       else
