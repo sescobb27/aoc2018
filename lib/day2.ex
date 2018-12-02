@@ -16,6 +16,22 @@ defmodule Day2 do
     two * three
   end
 
+  def differ(input) do
+    lines = input |> read_input()
+
+    # length(diff) == 4 # [eq: "_", del: "_", ins: "_", eq: "_"]
+    for line1 <- lines,
+        line2 <- lines,
+        line1 != line2,
+        diff = String.myers_difference(line1, line2),
+        length(diff) == 4 do
+      diff
+      |> Keyword.get_values(:eq)
+      |> Enum.join()
+    end
+    |> Enum.uniq()
+  end
+
   defp read_input(input) do
     input
     |> File.read!()
@@ -43,4 +59,4 @@ defmodule Day2 do
 end
 
 :aoc2018 |> :code.priv_dir() |> Path.join("day2.txt") |> Day2.checksum()
-:aoc2018 |> :code.priv_dir() |> Path.join("day2.txt") |> Day2.checksum()
+:aoc2018 |> :code.priv_dir() |> Path.join("day2.txt") |> Day2.differ()
