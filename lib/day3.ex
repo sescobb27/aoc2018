@@ -18,6 +18,33 @@ defmodule Day3 do
     MapSet.size(overlaps)
   end
 
+  def part2(input) do
+    map =
+      input
+      |> read_input()
+      |> extract_grid()
+      |> build_keyed_map()
+
+    {id, _} =
+      for {id1, coordinates1} <- map,
+          {id2, coordinates2} <- map,
+          id1 != id2 do
+        overlaps = MapSet.intersection(coordinates1, coordinates2)
+
+        if MapSet.size(overlaps) != 0 do
+          {id1, id2}
+        else
+          {id1, nil}
+        end
+      end
+      |> Enum.group_by(fn {key, _} -> key end, fn {_, value} -> value end)
+      |> Enum.find(fn {_key, overlaps} ->
+        Enum.all?(overlaps, &Kernel.==(&1, nil))
+      end)
+
+    id
+  end
+
   defp read_input(input) do
     input
     |> File.read!()
@@ -44,6 +71,18 @@ defmodule Day3 do
           y <- y..(y + height - 1) do
         {x, y, id}
       end
+    end)
+  end
+
+  defp build_keyed_map(grid) do
+    Enum.reduce(grid, %{}, fn [id, x, y, width, height], acc ->
+      coordinates =
+        for x <- x..(x + width - 1),
+            y <- y..(y + height - 1) do
+          {x, y}
+        end
+
+      Map.put_new(acc, id, MapSet.new(coordinates))
     end)
   end
 end
