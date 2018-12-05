@@ -29,8 +29,27 @@ defmodule Day4 do
   end
 
   def part2(input) do
-    input
-    |> read_input()
+    {_, guards} =
+      input
+      |> read_input()
+      |> extract_logs()
+      |> Enum.reduce({nil, %{}}, fn {_datetime, log_message} = log, {current_guard, guards} ->
+        Regex.run(@guard_entry, log_message, capture: :all_but_first)
+        |> case do
+          nil ->
+            {current_guard, Map.update!(guards, current_guard, &(&1 ++ [log]))}
+
+          [guard_id] ->
+            if Map.has_key?(guards, guard_id) do
+              {guard_id, guards}
+            else
+              {guard_id, Map.put(guards, guard_id, [])}
+            end
+        end
+      end)
+
+    {guard_id, minute, _size} = most_times_asleep(guards)
+    minute * String.to_integer(guard_id)
   end
 
   defp read_input(input) do
@@ -99,6 +118,45 @@ defmodule Day4 do
     end)
   end
 
+  defp most_times_asleep(guards) do
+    Enum.reduce(guards, {nil, 0, 0}, fn {guard_id, logs}, {_current_guard, _minute, max_size} = acc->
+      {intervals, []} =
+        Enum.reduce(logs, {[], []}, fn {datetime, log}, {range, entries} = acc ->
+          cond do
+            log == "falls asleep" ->
+              {range, [datetime | entries]}
+
+            log == "wakes up" ->
+              [prev_time] = entries
+              # to minutes
+              new_range = for min <- prev_time.minute..(datetime.minute - 1), do: min
+              {[new_range | range], []}
+
+            true ->
+              acc
+          end
+        end)
+
+      {minute, size} = List.flatten(intervals)
+      |> Enum.group_by(& &1)
+      |> Enum.reduce({nil, 0}, fn {minute, occurrences}, {_, times} = acc ->
+        size = length(occurrences)
+
+        if size > times do
+          {minute, size}
+        else
+          acc
+        end
+      end)
+
+      if size > max_size do
+        {guard_id, minute, size}
+      else
+        acc
+      end
+    end)
+  end
+
   defp get_minutes_of(guard_intervals) do
     {asleep_range, []} =
       guard_intervals
@@ -113,7 +171,6 @@ defmodule Day4 do
 
     {minute, _} =
       asleep_range
-      |> Enum.reverse()
       |> List.flatten()
       |> Enum.group_by(& &1)
       |> Enum.reduce({nil, 0}, fn {minute, occurrences}, {_, times} = acc ->
@@ -132,3 +189,22 @@ end
 
 # :aoc2018 |> :code.priv_dir() |> Path.join("day4.txt") |> Day4.part1()
 # :aoc2018 |> :code.priv_dir() |> Path.join("day4.txt") |> Day4.part2()
+
+input = "[1518-11-01 00:00] Guard #10 begins shift
+[1518-11-01 00:05] falls asleep
+[1518-11-01 00:25] wakes up
+[1518-11-01 00:30] falls asleep
+[1518-11-01 00:55] wakes up
+[1518-11-01 23:58] Guard #99 begins shift
+[1518-11-02 00:40] falls asleep
+[1518-11-02 00:50] wakes up
+[1518-11-03 00:05] Guard #10 begins shift
+[1518-11-03 00:24] falls asleep
+[1518-11-03 00:29] wakes up
+[1518-11-04 00:02] Guard #99 begins shift
+[1518-11-04 00:36] falls asleep
+[1518-11-04 00:46] wakes up
+[1518-11-05 00:03] Guard #99 begins shift
+[1518-11-05 00:45] falls asleep
+[1518-11-05 00:55] wakes up"
+# r Day4; Day4.part2(input)
