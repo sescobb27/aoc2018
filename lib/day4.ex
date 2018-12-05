@@ -119,8 +119,9 @@ defmodule Day4 do
   end
 
   defp most_times_asleep(guards) do
-    Enum.reduce(guards, {nil, 0, 0}, fn {guard_id, logs}, {_current_guard, _minute, max_size} = acc->
-      {intervals, []} =
+    Enum.reduce(guards, {nil, 0, 0}, fn {guard_id, logs},
+                                        {_current_guard, _minute, max_size} = acc ->
+      {asleep_range, []} =
         Enum.reduce(logs, {[], []}, fn {datetime, log}, {range, entries} = acc ->
           cond do
             log == "falls asleep" ->
@@ -137,17 +138,7 @@ defmodule Day4 do
           end
         end)
 
-      {minute, size} = List.flatten(intervals)
-      |> Enum.group_by(& &1)
-      |> Enum.reduce({nil, 0}, fn {minute, occurrences}, {_, times} = acc ->
-        size = length(occurrences)
-
-        if size > times do
-          {minute, size}
-        else
-          acc
-        end
-      end)
+      {minute, size} = get_most_asleep_minutes(asleep_range)
 
       if size > max_size do
         {guard_id, minute, size}
@@ -169,21 +160,23 @@ defmodule Day4 do
           {[new_range | range], []}
       end)
 
-    {minute, _} =
-      asleep_range
-      |> List.flatten()
-      |> Enum.group_by(& &1)
-      |> Enum.reduce({nil, 0}, fn {minute, occurrences}, {_, times} = acc ->
-        size = length(occurrences)
-
-        if size > times do
-          {minute, size}
-        else
-          acc
-        end
-      end)
-
+    {minute, _size} = get_most_asleep_minutes(asleep_range)
     minute
+  end
+
+  defp get_most_asleep_minutes(asleep_range) do
+    asleep_range
+    |> List.flatten()
+    |> Enum.group_by(& &1)
+    |> Enum.reduce({nil, 0}, fn {minute, occurrences}, {_, times} = acc ->
+      size = length(occurrences)
+
+      if size > times do
+        {minute, size}
+      else
+        acc
+      end
+    end)
   end
 end
 
