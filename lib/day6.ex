@@ -6,13 +6,29 @@ defmodule Day6 do
       |> create_grid()
       |> group_by_infinites()
 
-
     {_coordinates, layout} =
       finites
       |> Enum.group_by(fn {x, y, _dist} -> {x, y} end)
       |> Enum.max_by(fn {_, v} -> length(v) end)
 
     length(layout)
+  end
+
+  def part2(input) do
+    {max_x, max_y, coordinates} =
+      input
+      |> read_input()
+
+    for x <- 0..max_x,
+        y <- 0..max_y do
+      coordinates
+      |> Enum.reduce(0, fn {point_x, point_y}, acc ->
+        distance = abs(x - point_x) + abs(y - point_y)
+        distance + acc
+      end)
+    end
+    |> Enum.filter(&(&1 < 10_000))
+    |> Enum.count()
   end
 
   defp read_input(input) do
@@ -87,11 +103,3 @@ end
 
 # r Day6; :aoc2018 |> :code.priv_dir() |> Path.join("day6.txt") |> Day6.part1()
 # r Day6; :aoc2018 |> :code.priv_dir() |> Path.join("day6.txt") |> Day6.part2()
-
-# input = "1, 1
-# 1, 6
-# 8, 3
-# 3, 4
-# 5, 5
-# 8, 9"
-# r Day6; Day6.part1(input)
