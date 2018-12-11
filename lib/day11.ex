@@ -6,6 +6,13 @@ defmodule Day11 do
     |> max_cell()
   end
 
+  def part2(input) do
+    input
+    |> read_input()
+    |> compute_power_levels()
+    |> max_cell_dynamic_size()
+  end
+
   defp read_input(input) do
     input
     # |> File.read!()
@@ -48,6 +55,20 @@ defmodule Day11 do
     end
     |> List.flatten()
     |> Enum.max_by(fn {power_level, _} -> power_level end)
+  end
+
+  defp max_cell_dynamic_size(grid) do
+    for size <- 0..300, x <- 1..(300 - size), y <- 1..(300 - size) do
+      power_level =
+        for xs <- 0..size, ys <- 0..size do
+          Map.get(grid, {x + xs, y + ys}) || 0
+        end
+        |> Enum.sum()
+
+      {power_level, {x, y}, size}
+    end
+    |> List.flatten()
+    |> Enum.max_by(fn {power_level, _, _} -> power_level end)
   end
 end
 
