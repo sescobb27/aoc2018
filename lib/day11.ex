@@ -15,7 +15,7 @@ defmodule Day11 do
 
   defp read_input(input) do
     input
-    # |> File.read!()
+    |> File.read!()
   end
 
   defp compute_power_levels(input) do
@@ -58,17 +58,50 @@ defmodule Day11 do
   end
 
   defp max_cell_dynamic_size(grid) do
-    for size <- 0..300, x <- 1..(300 - size), y <- 1..(300 - size) do
-      power_level =
-        for xs <- 0..size, ys <- 0..size do
-          Map.get(grid, {x + xs, y + ys}) || 0
-        end
-        |> Enum.sum()
+    acc = {{0, 0, 0}, 0}
 
-      {power_level, {x, y}, size}
-    end
-    |> List.flatten()
-    |> Enum.max_by(fn {power_level, _, _} -> power_level end)
+    Enum.reduce(1..299, acc, fn x, acc ->
+      Enum.reduce(1..299, acc, fn y, acc ->
+        find_largest(x, y, grid, acc)
+      end)
+    end)
+  end
+
+  defp find_largest(x, y, grid, acc) do
+    max_square_size = min(301 - x, 301 - y)
+    level = grid[{x, y}]
+
+    {best, _} =
+      Enum.reduce(2..max_square_size, {acc, level}, fn square_size,
+                                                       {{_coord, prev_level} = prev, level} ->
+        level = sum_square(x, y, square_size, grid, level)
+
+        if level > prev_level do
+          {{{x, y, square_size}, level}, level}
+        else
+          {prev, level}
+        end
+      end)
+
+    best
+  end
+
+  defp sum_square(x0, y0, square_size, grid, acc) do
+    y = y0 + square_size - 1
+
+    acc =
+      Enum.reduce(x0..(x0 + square_size - 2), acc, fn x, acc ->
+        acc + grid[{x, y}]
+      end)
+
+    x = x0 + square_size - 1
+
+    acc =
+      Enum.reduce(y0..(y0 + square_size - 1), acc, fn y, acc ->
+        acc + grid[{x, y}]
+      end)
+
+    acc
   end
 end
 
