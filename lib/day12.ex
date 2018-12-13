@@ -8,6 +8,14 @@ defmodule Day12 do
     |> count_plants()
   end
 
+  # Based on JEG2 Stream https://www.twitch.tv/videos/348370632
+  def part2(input) do
+    input
+    |> read_input()
+    |> parse_input()
+    |> find_stability()
+  end
+
   defp read_input(input) do
     input
     |> File.read!()
@@ -63,30 +71,32 @@ defmodule Day12 do
     Enum.reduce(1..20, state, fn _i, new_state -> pass_generation(new_state) end)
   end
 
-  def count_plants({pots, _notes}) do
+  defp count_plants({pots, _notes}) do
     Enum.sum(pots)
+  end
+
+  defp find_stability(state) do
+    1..50_000_000_000
+    |> Enum.reduce_while({state, 0, []}, fn i, {new_state, prev_count, differences} ->
+      next_generation = pass_generation(new_state)
+      count = count_plants(next_generation)
+      difference = count - prev_count
+      new_differences = [difference | differences]
+
+      if length(new_differences) < 10 do
+        {:cont, {next_generation, count, new_differences}}
+      else
+        case Enum.uniq(new_differences) do
+          [n] ->
+            {:halt, (50_000_000_000 - i) * n + count}
+
+          _not_stable ->
+            {:cont, {next_generation, count, Enum.take(new_differences, 10)}}
+        end
+      end
+    end)
   end
 end
 
 # r Day12; :aoc2018 |> :code.priv_dir() |> Path.join("day12.txt") |> Day12.part1()
-# :aoc2018 |> :code.priv_dir() |> Path.join("day12.txt") |> Day12.part2()
-# 8910
-
-input = "initial state: #..#.#..##......###...###
-
-...## => #
-..#.. => #
-.#... => #
-.#.#. => #
-.#.## => #
-.##.. => #
-.#### => #
-#.#.# => #
-#.### => #
-##.#. => #
-##.## => #
-###.. => #
-###.# => #
-####. => #"
-
-# r Day12; Day12.part1(input)
+# r Day12; :aoc2018 |> :code.priv_dir() |> Path.join("day12.txt") |> Day12.part2()
